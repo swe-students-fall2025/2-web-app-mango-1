@@ -2,24 +2,6 @@
 
 A little exercise to build a web application following an agile development process. See the [instructions](instructions.md) for more detail.
 
-## Setup
-
-Install the required dependencies (ex: `pymongo`) in a python venv.
-
-To run the backend, `cd` into the app folder like so:
-
-```sh
-cd backend/app
-```
-
-and run the flask app with
-
-```sh
-flask --app main run
-```
-
-Your application should now be running on `http://127.0.0.1:5000`.
-
 ## Product vision statement
 
 See instructions. Delete this line and place the Product Vision Statement here.
@@ -42,10 +24,25 @@ See instructions. Delete this line and place the Product Vision Statement here.
 14. As a time-conscious student, I want a simple interface with minimal distractions so that I can focus on my actual studying.
 15. As a research assistant, I want to be able to track exactly when I'm most/least productive, so that I can see which areas need improvement or dont.
 
-
 ## Steps necessary to run the software
 
-See instructions. Delete this line and place instructions to download, configure, and run the software here.
+Install the required dependencies (ex: `pymongo`) in a python venv.
+
+Fill in your `.env` as follows in `.env.example`
+
+To run the backend, `cd` into the app folder like so:
+
+```sh
+cd backend/app
+```
+
+and run the flask app with
+
+```sh
+flask --app main run
+```
+
+Your application should now be running on `http://127.0.0.1:5000`.
 
 ## Task boards
 

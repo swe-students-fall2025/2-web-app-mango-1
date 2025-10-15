@@ -6,6 +6,20 @@ A little exercise to build a web application following an agile development proc
 
 Install the required dependencies (ex: `pymongo`) in a python venv.
 
+To run the backend, `cd` into the app folder like so:
+
+```sh
+cd backend/app
+```
+
+and run the flask app with
+
+```sh
+flask --app main run
+```
+
+Your application should now be running on `http://127.0.0.1:5000`.
+
 ## Product vision statement
 
 See instructions. Delete this line and place the Product Vision Statement here.

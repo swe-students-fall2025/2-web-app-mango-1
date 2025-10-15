@@ -8,7 +8,7 @@ See instructions. Delete this line and place the Product Vision Statement here.
 
 ## User stories
 
-See instructions. Delete this line and place a link to the user stories here.
+As an organized student, I want to keep track of how much time I spend studying a day and the amount of breaks I take, so that I can guage my productivity.
 
 ## Steps necessary to run the software
 

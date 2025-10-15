@@ -16,4 +16,4 @@ See instructions. Delete this line and place instructions to download, configure
 
 ## Task boards
 
-See instructions. Delete this line and place a link to the task boards here.
+https://github.com/orgs/swe-students-fall2025/projects/36/views/1

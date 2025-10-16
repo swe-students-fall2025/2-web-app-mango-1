@@ -4,11 +4,16 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-Flask = "*"
+flask-debugtoolbar = "*"
+dotenv = "*"
+flask = "*"
+flask-login = "*"
 pymongo = "*"
 python-dotenv = "*"
+werkzeug = "*"
+certifi = "*"
 
 [dev-packages]
 
 [requires]
-python_version = "3.12"
+python_version = "3.9"

@@ -26,21 +26,21 @@ See instructions. Delete this line and place the Product Vision Statement here.
 
 ## Steps necessary to run the software
 
-Install the required dependencies (ex: `pymongo`) in a python venv.
+Install the required dependences using Pipenv. In the project root, do:
+
+pip install pipenv
+pipenv install
 
 Fill in your `.env` as follows in `.env.example`
 
-To run the backend, `cd` into the app folder like so:
+Then activate the virtual environment using:
 
-```sh
-cd backend/app
-```
+pipenv shell
 
-and run the flask app with
+Run the backend
+From the project root, run:
 
-```sh
-flask --app main run
-```
+python -m backend.app.main
 
 Your application should now be running on `http://127.0.0.1:5000`.
 

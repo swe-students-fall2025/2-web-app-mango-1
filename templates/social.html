@@ -8,14 +8,12 @@
 <body>
     <div class="container">
         <nav class="navtop">
-            <!--Flask route to pomodoro.html-->
-            <a href="/home">Home</a>
-            <!--Current route to social-->
-            <a href="/social" class="active">Friends</a>
-            <!--Flask route to history.html-->
-            <a href="/pomodoro">Tasks</a>
-            <!--Flask route to index.html-->
-            <a href="/index">Log Out</a>
+            <a href="home.html">Home</a>
+            <a href="timer.html">Timer</a>
+            <a href="social.html" class="active">Friends</a>
+            <a href="history.html">History</a>
+            <a href="settings.html">Settings</a>
+            <a href="#" onclick="logout()">Log Out</a>
         </nav>
 
         <header class="title">
@@ -26,26 +24,214 @@
         <div class="card-container">
             <div class="card">
                 <h2>Friends List</h2>
-                <ul class="friends-list">
-                    <li>Friend 1</li>
-                    <li>Friend 2</li>
-                    <li>Friend 3</li>
-                    <li>Friend 4</li>
-                    <li>Friend 5</li>
-                </ul>
+                <div class="add-friend-section">
+                    <input type="text" id="friend-username" placeholder="Enter username to add friend">
+                    <button id="add-friend-btn" class="btn btn-primary">Add Friend</button>
+                </div>
+                <div id="friends-list" class="friends-list">
+                    <div class="loading">Loading friends...</div>
+                </div>
             </div>
 
             <div class="card">
                 <h2>Leaderboard</h2>
-                <ol class="leaderboard">
-                    <li><strong>Friend 1</strong> - 15 Tasks Completed</li>
-                    <li><strong>Friend 2</strong> - 12 Tasks Completed</li>
-                    <li><strong>Friend 3</strong> - 10 Tasks Completed</li>
-                    <li><strong>Friend 4</strong> - 8 Tasks Completed</li>
-                    <li><strong>Friend 5</strong> - 5 Tasks Completed</li>
-                </ol>
+                <div id="leaderboard" class="leaderboard">
+                    <div class="loading">Loading leaderboard...</div>
+                </div>
             </div>
-        </div> 
+        </div>
+
+        <div id="message" class="message" style="display: none;"></div> 
     </div>
+
+    <script>
+        const friendUsernameInput = document.getElementById('friend-username');
+        const addFriendBtn = document.getElementById('add-friend-btn');
+        const friendsList = document.getElementById('friends-list');
+        const leaderboard = document.getElementById('leaderboard');
+        const messageDiv = document.getElementById('message');
+
+        async function loadFriends() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/friends', {
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayFriends(data.friends);
+                } else {
+                    showMessage('Failed to load friends', 'error');
+                    friendsList.innerHTML = '<div class="no-friends">Failed to load friends</div>';
+                }
+            } catch (error) {
+                showMessage('Network error loading friends', 'error');
+                friendsList.innerHTML = '<div class="no-friends">Failed to load friends</div>';
+            }
+        }
+
+        function displayFriends(friends) {
+            if (friends.length === 0) {
+                friendsList.innerHTML = '<div class="no-friends">No friends yet. Add some friends to start competing!</div>';
+                return;
+            }
+
+            const friendsHTML = friends.map(friend => `
+                <div class="friend-item">
+                    <div class="friend-info">
+                        <span class="friend-name">${friend.username}</span>
+                        <span class="friend-email">${friend.email}</span>
+                    </div>
+                    <button class="btn btn-danger btn-small" onclick="removeFriend('${friend._id}')">Remove</button>
+                </div>
+            `).join('');
+
+            friendsList.innerHTML = friendsHTML;
+        }
+
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/leaderboard', {
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayLeaderboard(data.leaderboard);
+                } else {
+                    showMessage('Failed to load leaderboard', 'error');
+                    leaderboard.innerHTML = '<div class="no-leaderboard">Failed to load leaderboard</div>';
+                }
+            } catch (error) {
+                showMessage('Network error loading leaderboard', 'error');
+                leaderboard.innerHTML = '<div class="no-leaderboard">Failed to load leaderboard</div>';
+            }
+        }
+
+        function displayLeaderboard(leaderboardData) {
+            if (leaderboardData.length === 0) {
+                leaderboard.innerHTML = '<div class="no-leaderboard">No leaderboard data available</div>';
+                return;
+            }
+
+            const leaderboardHTML = leaderboardData.map((entry, index) => {
+                const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '';
+                return `
+                    <div class="leaderboard-item ${index < 3 ? 'top-three' : ''}">
+                        <span class="rank">${medal} #${entry.rank}</span>
+                        <span class="name">${entry.user.username}</span>
+                        <span class="cycles">${entry.total_cycles} cycles</span>
+                    </div>
+                `;
+            }).join('');
+
+            leaderboard.innerHTML = leaderboardHTML;
+        }
+
+        async function addFriend() {
+            const username = friendUsernameInput.value.trim();
+            
+            if (!username) {
+                showMessage('Please enter a username', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/friends/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Friend added successfully!', 'success');
+                    friendUsernameInput.value = '';
+                    await Promise.all([loadFriends(), loadLeaderboard()]);
+                } else {
+                    showMessage(data.error || 'Failed to add friend', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error adding friend', 'error');
+            }
+        }
+
+        async function removeFriend(friendId) {
+            if (!confirm('Are you sure you want to remove this friend?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/api/friends/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ friend_id: friendId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('Friend removed successfully!', 'success');
+                    await Promise.all([loadFriends(), loadLeaderboard()]);
+                } else {
+                    showMessage(data.error || 'Failed to remove friend', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error removing friend', 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+            setTimeout(() => {
+                messageDiv.style.display = 'none';
+            }, 3000);
+        }
+
+        async function logout() {
+            try {
+                await fetch('http://127.0.0.1:5000/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include'
+                });
+                window.location.href = 'index.html';
+            } catch (error) {
+                window.location.href = 'index.html';
+            }
+        }
+
+        addFriendBtn.addEventListener('click', addFriend);
+        friendUsernameInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                addFriend();
+            }
+        });
+
+        async function init() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/auth/me', {
+                    credentials: 'include'
+                });
+                
+                if (!response.ok) {
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                await Promise.all([loadFriends(), loadLeaderboard()]);
+            } catch (error) {
+                window.location.href = 'index.html';
+            }
+        }
+
+        init();
+    </script>
 </body>
 </html>

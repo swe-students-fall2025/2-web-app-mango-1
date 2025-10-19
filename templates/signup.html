@@ -1,31 +1,111 @@
 <!DOCTYPE html>
 <html>
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Sign Up - Pomodoro App</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" type="text/css" href="/static/styles/signup.css">
-</head>
-<body>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="/static/styles/signup.css" />
+  </head>
+  <body>
     <div class="container">
-        <header class="title">
-            <h1>Create an Account</h1>
-            <p class="tagline">Join and start your productivity journey!</p>
-        </header>
+      <header class="title">
+        <h1>Create an Account</h1>
+        <p class="tagline">Join and start your productivity journey!</p>
+      </header>
 
-        <div class="signup-card">
-            <!-- Flask route to home page -->
-            <form action="/home" method="post">
-                <label for="username">Username</label>
-                <input class="text" type="text" id="username" name="username" placeholder="Enter username" required>
+      <div class="signup-card">
+        <form id="signupForm">
+          <label for="username">Username</label>
+          <input
+            class="text"
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Enter username"
+            required
+          />
 
-                <label for="password">Password</label>
-                <input class="password" type="password" id="password" name="password" placeholder="Enter password" required>
+          <label for="email">Email</label>
+          <input
+            class="text"
+            type="email"
+            id="email"
+            name="email"
+            placeholder="Enter email address"
+            required
+          />
 
-                <button class="submit" type="submit">Sign Up</button>
-                <a href="/login" class="login-button">Already have an account? Log In</a>
-            </form>
-        </div>
+          <label for="password">Password</label>
+          <input
+            class="password"
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter password"
+            required
+          />
+
+          <button class="submit" type="submit">Sign Up</button>
+          <a href="/" class="login-button">Already have an account? Log In</a>
+
+          <div id="message" class="message" style="display: none"></div>
+        </form>
+      </div>
     </div>
-</body>
+
+    <script>
+      document
+        .getElementById("signupForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+
+          const formData = {
+            username: document.getElementById("username").value.trim(),
+            email: document.getElementById("email").value.trim().toLowerCase(),
+            password: document.getElementById("password").value,
+          };
+
+          const messageDiv = document.getElementById("message");
+          messageDiv.style.display = "none";
+
+          try {
+            const response = await fetch(
+              "http://127.0.0.1:5000/auth/register",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify(formData),
+                credentials: "include",
+              }
+            );
+
+            const data = await response.json();
+
+            if (response.ok) {
+              messageDiv.className = "message success";
+              messageDiv.textContent =
+                "Account created successfully! Redirecting...";
+              messageDiv.style.display = "block";
+
+              setTimeout(() => {
+                window.location.href = "/";
+              }, 2000);
+            } else {
+              messageDiv.className = "message error";
+              messageDiv.textContent =
+                data.error || "An error occurred during signup";
+              messageDiv.style.display = "block";
+            }
+          } catch (error) {
+            console.error("Signup error:", error);
+            messageDiv.className = "message error";
+            messageDiv.textContent =
+              "Network error. Please check if the backend is running.";
+            messageDiv.style.display = "block";
+          }
+        });
+    </script>
+  </body>
 </html>

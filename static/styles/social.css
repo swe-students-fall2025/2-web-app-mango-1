@@ -1,105 +1,285 @@
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: Georgia, 'Times New Roman', Times, serif;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Georgia, "Times New Roman", Times, serif;
 }
 
 body {
-    background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    padding: 20px;
-    height: 100vh;
+  background-image: linear-gradient(120deg, #a1c4fd 0%, #c2e9fb 100%);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+  height: 100vh;
 }
 
 .container {
-    max-width: 600px;
-    width: 100%;
+  max-width: 600px;
+  width: 100%;
 }
 
-
 .navtop {
-    background: white;
-    margin-bottom: 25px;
-    border-radius: 15px;
-    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
-    display: flex;
-    justify-content: space-around;
-    padding: 12px;
+  background: white;
+  margin-bottom: 25px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  display: flex;
+  justify-content: space-around;
+  padding: 12px;
 }
 
 .navtop a {
-    text-decoration: none;
-    color: grey;
-    font-weight: 500;
-    transition: color 0.3s, transform 0.2s;
+  text-decoration: none;
+  color: grey;
+  font-weight: 500;
+  transition: color 0.3s, transform 0.2s;
 }
 
 .navtop a:hover {
-    color: blue;
+  color: blue;
 }
 
 .title {
-    text-align: center;
-    margin-bottom: 25px;
-    color: white;
+  text-align: center;
+  margin-bottom: 25px;
+  color: white;
 }
 
 .title h1 {
-    font-size: 2rem;
-    font-weight: 700;
+  font-size: 2rem;
+  font-weight: 700;
 }
 
 .tagline {
-    font-size: 1rem;
-    margin-top: 5px;
-    color: white;
+  font-size: 1rem;
+  margin-top: 5px;
+  color: white;
 }
 
-
 .card {
-    background: white;
-    border-radius: 15px;
-    padding: 25px 20px;
-    margin-bottom: 20px;
+  background: white;
+  border-radius: 15px;
+  padding: 25px 20px;
+  margin-bottom: 20px;
 }
 
 .card h2 {
-    margin-bottom: 15px;
-    color: #333;
-    text-align: center;
+  margin-bottom: 15px;
+  color: #333;
+  text-align: center;
 }
 
-.friends-list, .leaderboard {
-    padding-left: 0;
-    font-size: 1rem;
-    color: #555;
+.friends-list,
+.leaderboard {
+  padding-left: 0;
+  font-size: 1rem;
+  color: #555;
 }
 
 .friends-list {
-    list-style: none;
+  list-style: none;
 }
 
-.friends-list li, .leaderboard li {
-    background: white;
-    border-radius: 10px;
-    padding: 10px;
-    margin-bottom: 10px;
+.friends-list li,
+.leaderboard li {
+  background: white;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
 }
 
 .leaderboard li strong {
-    color: blue;
+  color: blue;
 }
 .card-container {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;              
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
 }
 
 .card-container .card {
-    flex: 1;
-    margin-bottom: 0;       
+  flex: 1;
+  margin-bottom: 0;
 }
 
+/* Add friend section */
+.add-friend-section {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.add-friend-section input {
+  flex: 1;
+  padding: 10px;
+  border: 2px solid #eee;
+  border-radius: 10px;
+  font-size: 1rem;
+}
+
+.add-friend-section input:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.btn-small {
+  padding: 5px 10px;
+  font-size: 0.8rem;
+}
+
+/* Friends list */
+.friend-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  transition: all 0.3s;
+}
+
+.friend-item:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.friend-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.friend-name {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.friend-email {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Leaderboard */
+.leaderboard-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  transition: all 0.3s;
+}
+
+.leaderboard-item:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.leaderboard-item.top-three {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border-color: #ffd700;
+}
+
+.rank {
+  font-weight: 600;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.name {
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+  text-align: center;
+}
+
+.cycles {
+  font-weight: 600;
+  color: #4a90e2;
+}
+
+/* Loading and empty states */
+.loading,
+.no-friends,
+.no-leaderboard {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Messages */
+.message {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.message.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.message.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .card-container {
+    flex-direction: column;
+  }
+
+  .add-friend-section {
+    flex-direction: column;
+  }
+
+  .friend-item,
+  .leaderboard-item {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .friend-info {
+    align-items: center;
+  }
+}

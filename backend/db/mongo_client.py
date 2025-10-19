@@ -1,7 +1,6 @@
 import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
-import certifi # for ssl verification with Atlas
 
 load_dotenv()
 
@@ -14,11 +13,11 @@ if not (username and password):
 
 MONGO_URI = f"mongodb+srv://{username}:{password}@mango.wnciexw.mongodb.net/"
 
-client = MongoClient(MONGO_URI, tlsCAFile=certifi.where())
+client = MongoClient(MONGO_URI)
 db = client[db_name]
 
 try:
     client.admin.command("ping")
-    print("connected")
+    print("connected to " + db_name)
 except Exception as e:
     print("failed ", e)

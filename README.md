@@ -28,21 +28,38 @@ See instructions. Delete this line and place the Product Vision Statement here.
 
 Install the required dependences using Pipenv. In the project root, do:
 
+```sh
 pip install pipenv
 pipenv install
+```
 
 Fill in your `.env` as follows in `.env.example`
 
 Then activate the virtual environment using:
 
+```sh
 pipenv shell
+```
 
-Run the backend
+### Run the backend
+
 From the project root, run:
 
+```sh
 python -m backend.app.main
+```
 
 Your application should now be running on `http://127.0.0.1:5000`.
+
+### Run the frontend
+
+From the project root, run:
+
+```sh
+python -m http.server 8000
+```
+
+to have the frontend running on the port 8000.
 
 ## Task boards
 

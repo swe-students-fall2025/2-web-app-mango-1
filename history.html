@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Study History</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="styles/history.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="navtop">
+        <a href="home.html">Home</a>
+        <a href="timer.html">Timer</a>
+        <a href="social.html">Friends</a>
+        <a href="history.html" class="active">History</a>
+        <a href="settings.html">Settings</a>
+        <a href="#" onclick="logout()">Log Out</a>
+      </nav>
+
+      <header class="title">
+        <h1>Study History</h1>
+        <p class="tagline">Track your progress and productivity!</p>
+      </header>
+
+      <div class="stats-container">
+        <div class="stats-card">
+          <h3>Your Statistics</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-number" id="total-sessions">0</div>
+              <div class="stat-label">Total Sessions</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="total-cycles">0</div>
+              <div class="stat-label">Completed Cycles</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="current-streak">0</div>
+              <div class="stat-label">Current Streak</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="history-container">
+        <div class="history-header">
+          <h2>Recent Sessions</h2>
+          <div class="pagination-controls">
+            <button id="prev-page" class="btn btn-outline" disabled>
+              Previous
+            </button>
+            <span id="page-info">Page 1 of 1</span>
+            <button id="next-page" class="btn btn-outline" disabled>
+              Next
+            </button>
+          </div>
+        </div>
+
+        <div class="sessions-list" id="sessions-list">
+          <div class="loading">Loading sessions...</div>
+        </div>
+      </div>
+
+      <div id="message" class="message" style="display: none"></div>
+    </div>
+
+    <script>
+      let currentPage = 1;
+      let totalPages = 1;
+      const limit = 10;
+
+      const sessionsList = document.getElementById("sessions-list");
+      const prevPageBtn = document.getElementById("prev-page");
+      const nextPageBtn = document.getElementById("next-page");
+      const pageInfo = document.getElementById("page-info");
+      const totalSessionsDisplay = document.getElementById("total-sessions");
+      const totalCyclesDisplay = document.getElementById("total-cycles");
+      const currentStreakDisplay = document.getElementById("current-streak");
+      const messageDiv = document.getElementById("message");
+
+      async function loadStats() {
+        try {
+          const response = await fetch(
+            "http://127.0.0.1:5000/api/sessions/stats",
+            {
+              credentials: "include",
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            totalSessionsDisplay.textContent = data.total_sessions || 0;
+            totalCyclesDisplay.textContent = data.total_cycles || 0;
+            currentStreakDisplay.textContent = data.current_streak || 0;
+          } else {
+            showMessage("Failed to load statistics", "error");
+          }
+        } catch (error) {
+          showMessage("Network error loading statistics", "error");
+        }
+      }
+
+      async function loadSessions(page = 1) {
+        try {
+          sessionsList.innerHTML =
+            '<div class="loading">Loading sessions...</div>';
+
+          const response = await fetch(
+            `http://127.0.0.1:5000/api/sessions?page=${page}&limit=${limit}`,
+            {
+              credentials: "include",
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            displaySessions(data.sessions);
+            updatePagination(data.total, data.page, data.limit);
+          } else {
+            showMessage("Failed to load sessions", "error");
+            sessionsList.innerHTML =
+              '<div class="no-sessions">No sessions found</div>';
+          }
+        } catch (error) {
+          showMessage("Network error loading sessions", "error");
+          sessionsList.innerHTML =
+            '<div class="no-sessions">Failed to load sessions</div>';
+        }
+      }
+
+      function displaySessions(sessions) {
+        if (sessions.length === 0) {
+          sessionsList.innerHTML =
+            '<div class="no-sessions">No study sessions found. Start your first session!</div>';
+          return;
+        }
+
+        const sessionsHTML = sessions
+          .map((session) => {
+            const startTime = new Date(session.start_time);
+            const endTime = session.end_time
+              ? new Date(session.end_time)
+              : null;
+            const duration = endTime
+              ? Math.round((endTime - startTime) / 60000)
+              : "In Progress";
+            const status =
+              session.status === "stopped" ? "Completed" : "In Progress";
+            const statusClass =
+              session.status === "stopped" ? "completed" : "in-progress";
+
+            return `
+            <div class="session-item">
+              <div class="session-header">
+                <div class="session-date">${startTime.toLocaleDateString()}</div>
+                <div class="session-status ${statusClass}">${status}</div>
+              </div>
+              <div class="session-details">
+                <div class="detail-item">
+                  <span class="label">Start Time:</span>
+                  <span class="value">${startTime.toLocaleTimeString()}</span>
+                </div>
+                ${
+                  endTime
+                    ? `
+                  <div class="detail-item">
+                    <span class="label">End Time:</span>
+                    <span class="value">${endTime.toLocaleTimeString()}</span>
+                  </div>
+                `
+                    : ""
+                }
+                <div class="detail-item">
+                  <span class="label">Duration:</span>
+                  <span class="value">${duration} minutes</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Work Duration:</span>
+                  <span class="value">${session.work_duration} min</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Break Duration:</span>
+                  <span class="value">${session.break_duration} min</span>
+                </div>
+                <div class="detail-item">
+                  <span class="label">Completed Cycles:</span>
+                  <span class="value">${session.completed_cycles}</span>
+                </div>
+              </div>
+            </div>
+          `;
+          })
+          .join("");
+
+        sessionsList.innerHTML = sessionsHTML;
+      }
+
+      function updatePagination(total, page, limit) {
+        totalPages = Math.ceil(total / limit);
+        currentPage = page;
+
+        pageInfo.textContent = `Page ${page} of ${totalPages}`;
+
+        prevPageBtn.disabled = currentPage <= 1;
+        nextPageBtn.disabled = currentPage >= totalPages;
+      }
+
+      function goToPrevPage() {
+        if (currentPage > 1) {
+          loadSessions(currentPage - 1);
+        }
+      }
+
+      function goToNextPage() {
+        if (currentPage < totalPages) {
+          loadSessions(currentPage + 1);
+        }
+      }
+
+      function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.className = `message ${type}`;
+        messageDiv.style.display = "block";
+        setTimeout(() => {
+          messageDiv.style.display = "none";
+        }, 3000);
+      }
+
+      async function logout() {
+        try {
+          await fetch("http://127.0.0.1:5000/auth/logout", {
+            method: "POST",
+            credentials: "include",
+          });
+          window.location.href = "index.html";
+        } catch (error) {
+          window.location.href = "index.html";
+        }
+      }
+
+      prevPageBtn.addEventListener("click", goToPrevPage);
+      nextPageBtn.addEventListener("click", goToNextPage);
+
+      async function init() {
+        try {
+          const response = await fetch("http://127.0.0.1:5000/auth/me", {
+            credentials: "include",
+          });
+
+          if (!response.ok) {
+            window.location.href = "index.html";
+            return;
+          }
+
+          await Promise.all([loadStats(), loadSessions()]);
+        } catch (error) {
+          window.location.href = "index.html";
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>

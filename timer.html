@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Pomodoro Timer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="styles/timer.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="navtop">
+        <a href="home.html">Home</a>
+        <a href="timer.html" class="active">Timer</a>
+        <a href="social.html">Friends</a>
+        <a href="history.html">History</a>
+        <a href="settings.html">Settings</a>
+        <a href="#" onclick="logout()">Log Out</a>
+      </nav>
+
+      <header class="title">
+        <h1>Focus Timer</h1>
+        <p class="tagline">Stay focused, stay productive!</p>
+      </header>
+
+      <div class="timer-container">
+        <div class="timer-card">
+          <div class="timer-display">
+            <div id="timer-circle">
+              <div class="timer-text">
+                <div id="time-display">25:00</div>
+                <div id="session-type">Work Session</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="timer-controls">
+            <button id="start-btn" class="btn btn-primary">Start</button>
+            <button id="stop-btn" class="btn btn-secondary" disabled>
+              Stop
+            </button>
+            <button id="pause-btn" class="btn btn-secondary" disabled>
+              Pause
+            </button>
+          </div>
+
+          <div class="session-info">
+            <div class="info-item">
+              <span class="label">Completed Cycles:</span>
+              <span id="completed-cycles">0</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Current Session:</span>
+              <span id="current-session">Work</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>Timer Settings</h3>
+          <div class="setting-group">
+            <label for="work-duration">Work Duration (minutes):</label>
+            <input
+              type="number"
+              id="work-duration"
+              value="25"
+              min="1"
+              max="60"
+            />
+          </div>
+          <div class="setting-group">
+            <label for="break-duration">Break Duration (minutes):</label>
+            <input
+              type="number"
+              id="break-duration"
+              value="5"
+              min="1"
+              max="30"
+            />
+          </div>
+          <button id="apply-settings" class="btn btn-outline">
+            Apply Settings
+          </button>
+        </div>
+      </div>
+
+      <div id="message" class="message" style="display: none"></div>
+    </div>
+
+    <script>
+      let currentSession = null;
+      let timerInterval = null;
+      let timeRemaining = 0;
+      let isPaused = false;
+      let isWorkingSession = true;
+      let completedCycles = 0;
+
+      const timeDisplay = document.getElementById("time-display");
+      const sessionType = document.getElementById("session-type");
+      const startBtn = document.getElementById("start-btn");
+      const stopBtn = document.getElementById("stop-btn");
+      const pauseBtn = document.getElementById("pause-btn");
+      const completedCyclesDisplay =
+        document.getElementById("completed-cycles");
+      const currentSessionDisplay = document.getElementById("current-session");
+      const workDurationInput = document.getElementById("work-duration");
+      const breakDurationInput = document.getElementById("break-duration");
+      const applySettingsBtn = document.getElementById("apply-settings");
+      const messageDiv = document.getElementById("message");
+
+      function updateDisplay() {
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        timeDisplay.textContent = `${minutes
+          .toString()
+          .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+        sessionType.textContent = isWorkingSession
+          ? "Work Session"
+          : "Break Time";
+        currentSessionDisplay.textContent = isWorkingSession ? "Work" : "Break";
+        completedCyclesDisplay.textContent = completedCycles;
+      }
+
+      async function startTimer() {
+        try {
+          timeRemaining = parseInt(workDurationInput.value) * 60;
+          isWorkingSession = true;
+
+          const response = await fetch(
+            "http://127.0.0.1:5000/api/timer/start",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                work_duration: parseInt(workDurationInput.value),
+                break_duration: parseInt(breakDurationInput.value),
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            currentSession = data.session_id;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            pauseBtn.disabled = false;
+            workDurationInput.disabled = true;
+            breakDurationInput.disabled = true;
+            timerInterval = setInterval(tick, 1000);
+            updateDisplay();
+            showMessage("Timer started!", "success");
+          } else {
+            showMessage(data.error || "Failed to start timer", "error");
+          }
+        } catch (error) {
+          showMessage(
+            "Network error. Please check if the backend is running.",
+            "error"
+          );
+        }
+      }
+
+      async function stopTimer() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+
+        if (currentSession) {
+          try {
+            await fetch("http://127.0.0.1:5000/api/timer/stop", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ session_id: currentSession }),
+            });
+          } catch (error) {
+            console.error("Timer stop error:", error);
+          }
+        }
+
+        resetTimer();
+      }
+
+      function togglePause() {
+        if (isPaused) {
+          timerInterval = setInterval(tick, 1000);
+          pauseBtn.textContent = "Pause";
+          isPaused = false;
+        } else {
+          clearInterval(timerInterval);
+          pauseBtn.textContent = "Resume";
+          isPaused = true;
+        }
+      }
+
+      function tick() {
+        timeRemaining--;
+        updateDisplay();
+        if (timeRemaining <= 0) {
+          completeCycle();
+        }
+      }
+
+      async function completeCycle() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+
+        completedCycles++;
+
+        if (currentSession) {
+          try {
+            await fetch("http://127.0.0.1:5000/api/timer/complete-cycle", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({ session_id: currentSession }),
+            });
+          } catch (error) {
+            console.error("Complete cycle error:", error);
+          }
+        }
+
+        if (isWorkingSession) {
+          isWorkingSession = false;
+          timeRemaining = parseInt(breakDurationInput.value) * 60;
+          showMessage("Work session complete! Time for a break.", "success");
+        } else {
+          isWorkingSession = true;
+          timeRemaining = parseInt(workDurationInput.value) * 60;
+          showMessage(
+            "Break time over! Ready for another work session?",
+            "info"
+          );
+        }
+
+        updateDisplay();
+
+        setTimeout(() => {
+          if (!isPaused) {
+            timerInterval = setInterval(tick, 1000);
+          }
+        }, 3000);
+      }
+
+      function resetTimer() {
+        if (timerInterval) {
+          clearInterval(timerInterval);
+          timerInterval = null;
+        }
+
+        currentSession = null;
+        timeRemaining = parseInt(workDurationInput.value) * 60;
+        isWorkingSession = true;
+        isPaused = false;
+
+        startBtn.disabled = false;
+        stopBtn.disabled = true;
+        pauseBtn.disabled = true;
+        workDurationInput.disabled = false;
+        breakDurationInput.disabled = false;
+        pauseBtn.textContent = "Pause";
+
+        updateDisplay();
+      }
+
+      function applySettings() {
+        if (!timerInterval) {
+          timeRemaining = parseInt(workDurationInput.value) * 60;
+          isWorkingSession = true;
+          updateDisplay();
+          showMessage("Settings applied!", "success");
+        } else {
+          showMessage("Cannot change settings while timer is running", "error");
+        }
+      }
+
+      function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.className = `message ${type}`;
+        messageDiv.style.display = "block";
+        setTimeout(() => {
+          messageDiv.style.display = "none";
+        }, 3000);
+      }
+
+      async function logout() {
+        try {
+          await fetch("http://127.0.0.1:5000/auth/logout", {
+            method: "POST",
+            credentials: "include",
+          });
+          window.location.href = "index.html";
+        } catch (error) {
+          window.location.href = "index.html";
+        }
+      }
+
+      startBtn.addEventListener("click", startTimer);
+      stopBtn.addEventListener("click", stopTimer);
+      pauseBtn.addEventListener("click", togglePause);
+      applySettingsBtn.addEventListener("click", applySettings);
+
+      updateDisplay();
+
+      fetch("http://127.0.0.1:5000/auth/me", {
+        credentials: "include",
+      }).then((response) => {
+        if (!response.ok) {
+          window.location.href = "index.html";
+        }
+      });
+    </script>
+  </body>
+</html>

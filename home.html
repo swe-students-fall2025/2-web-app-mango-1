@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="styles/home.css" />
+  </head>
+  <body>
+    <div class="container">
+      <nav class="navtop">
+        <a href="home.html" class="active">Home</a>
+        <a href="timer.html">Timer</a>
+        <a href="social.html">Friends</a>
+        <a href="history.html">History</a>
+        <a href="settings.html">Settings</a>
+        <a href="#" onclick="logout()">Log Out</a>
+      </nav>
+
+      <header class="title">
+        <h1>Welcome back!</h1>
+        <p class="tagline">Ready to focus and be productive?</p>
+      </header>
+
+      <div class="dashboard-grid">
+        <div class="stats-card">
+          <h3>Today's Progress</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-number" id="today-sessions">0</div>
+              <div class="stat-label">Sessions Today</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="today-cycles">0</div>
+              <div class="stat-label">Cycles Completed</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-number" id="today-time">0</div>
+              <div class="stat-label">Minutes Focused</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="overview-card">
+          <h3>Overall Statistics</h3>
+          <div class="overview-stats">
+            <div class="overview-item">
+              <span class="label">Total Sessions:</span>
+              <span class="value" id="total-sessions">0</span>
+            </div>
+            <div class="overview-item">
+              <span class="label">Total Cycles:</span>
+              <span class="value" id="total-cycles">0</span>
+            </div>
+            <div class="overview-item">
+              <span class="label">Current Streak:</span>
+              <span class="value" id="current-streak">0 days</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="quick-actions-card">
+          <h3>Quick Actions</h3>
+          <div class="action-buttons">
+            <button class="btn btn-primary" onclick="startQuickTimer()">
+              <span class="btn-icon">⏱️</span>
+              Start 25min Focus
+            </button>
+            <button class="btn btn-secondary" onclick="viewHistory()">
+              <span class="btn-icon">📊</span>
+              View History
+            </button>
+            <button class="btn btn-secondary" onclick="manageFriends()">
+              <span class="btn-icon">👥</span>
+              Manage Friends
+            </button>
+          </div>
+        </div>
+
+        <div class="recent-sessions-card">
+          <h3>Recent Sessions</h3>
+          <div id="recent-sessions" class="recent-sessions-list">
+            <div class="loading">Loading recent sessions...</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="message" class="message" style="display: none"></div>
+    </div>
+
+    <script>
+      const todaySessionsDisplay = document.getElementById("today-sessions");
+      const todayCyclesDisplay = document.getElementById("today-cycles");
+      const todayTimeDisplay = document.getElementById("today-time");
+      const totalSessionsDisplay = document.getElementById("total-sessions");
+      const totalCyclesDisplay = document.getElementById("total-cycles");
+      const currentStreakDisplay = document.getElementById("current-streak");
+      const recentSessionsList = document.getElementById("recent-sessions");
+      const messageDiv = document.getElementById("message");
+
+      async function loadDashboardData() {
+        try {
+          const statsResponse = await fetch(
+            "http://127.0.0.1:5000/api/sessions/stats",
+            {
+              credentials: "include",
+            }
+          );
+
+          if (statsResponse.ok) {
+            const stats = await statsResponse.json();
+            totalSessionsDisplay.textContent = stats.total_sessions || 0;
+            totalCyclesDisplay.textContent = stats.total_cycles || 0;
+            currentStreakDisplay.textContent = `${
+              stats.current_streak || 0
+            } days`;
+          }
+
+          const sessionsResponse = await fetch(
+            "http://127.0.0.1:5000/api/sessions?page=1&limit=5",
+            {
+              credentials: "include",
+            }
+          );
+
+          if (sessionsResponse.ok) {
+            const sessionsData = await sessionsResponse.json();
+            displayRecentSessions(sessionsData.sessions);
+            calculateTodayStats(sessionsData.sessions);
+          }
+        } catch (error) {
+          showMessage("Failed to load dashboard data", "error");
+        }
+      }
+
+      function displayRecentSessions(sessions) {
+        if (sessions.length === 0) {
+          recentSessionsList.innerHTML =
+            '<div class="no-sessions">No recent sessions. Start your first focus session!</div>';
+          return;
+        }
+
+        const sessionsHTML = sessions
+          .map((session) => {
+            const startTime = new Date(session.start_time);
+            const endTime = session.end_time
+              ? new Date(session.end_time)
+              : null;
+            const duration = endTime
+              ? Math.round((endTime - startTime) / 60000)
+              : "In Progress";
+            const status =
+              session.status === "stopped" ? "Completed" : "In Progress";
+            const statusClass =
+              session.status === "stopped" ? "completed" : "in-progress";
+
+            return `
+            <div class="session-item">
+              <div class="session-info">
+                <div class="session-date">${startTime.toLocaleDateString()}</div>
+                <div class="session-duration">${duration} min</div>
+              </div>
+              <div class="session-meta">
+                <span class="session-status ${statusClass}">${status}</span>
+                <span class="session-cycles">${
+                  session.completed_cycles
+                } cycles</span>
+              </div>
+            </div>
+          `;
+          })
+          .join("");
+
+        recentSessionsList.innerHTML = sessionsHTML;
+      }
+
+      function calculateTodayStats(sessions) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let todaySessions = 0;
+        let todayCycles = 0;
+        let todayTime = 0;
+
+        sessions.forEach((session) => {
+          const sessionDate = new Date(session.start_time);
+          sessionDate.setHours(0, 0, 0, 0);
+
+          if (sessionDate.getTime() === today.getTime()) {
+            todaySessions++;
+            todayCycles += session.completed_cycles || 0;
+
+            if (session.end_time) {
+              const startTime = new Date(session.start_time);
+              const endTime = new Date(session.end_time);
+              todayTime += Math.round((endTime - startTime) / 60000);
+            }
+          }
+        });
+
+        todaySessionsDisplay.textContent = todaySessions;
+        todayCyclesDisplay.textContent = todayCycles;
+        todayTimeDisplay.textContent = todayTime;
+      }
+
+      function startQuickTimer() {
+        window.location.href = "timer.html";
+      }
+
+      function viewHistory() {
+        window.location.href = "history.html";
+      }
+
+      function manageFriends() {
+        window.location.href = "social.html";
+      }
+
+      function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.className = `message ${type}`;
+        messageDiv.style.display = "block";
+        setTimeout(() => {
+          messageDiv.style.display = "none";
+        }, 3000);
+      }
+
+      async function logout() {
+        try {
+          await fetch("http://127.0.0.1:5000/auth/logout", {
+            method: "POST",
+            credentials: "include",
+          });
+          window.location.href = "index.html";
+        } catch (error) {
+          window.location.href = "index.html";
+        }
+      }
+
+      async function init() {
+        try {
+          const response = await fetch("http://127.0.0.1:5000/auth/me", {
+            credentials: "include",
+          });
+
+          if (!response.ok) {
+            window.location.href = "index.html";
+            return;
+          }
+
+          await loadDashboardData();
+        } catch (error) {
+          window.location.href = "index.html";
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>

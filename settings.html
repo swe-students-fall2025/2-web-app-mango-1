@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Settings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" type="text/css" href="styles/settings.css" />
+  </head>
+  <body>
+    <div class="중ontainer">
+      <nav class="navtop">
+        <a href="home.html">Home</a>
+        <a href="timer.html">Timer</a>
+        <a href="social.html">Friends</a>
+        <a href="history.html">History</a>
+        <a href="settings.html" class="active">Settings</a>
+        <a href="#" onclick="logout()">Log Out</a>
+      </nav>
+
+      <header class="title">
+        <h1>Settings</h1>
+        <p class="tagline">Customize your study experience!</p>
+      </header>
+
+      <div class="settings-container">
+        <div class="settings-card">
+          <h3>Timer Settings</h3>
+          <form id="timer-settings-form">
+            <div class="setting-group">
+              <label for="default-work-duration"
+                >Default Work Duration (minutes):</label
+              >
+              <input
+                type="number"
+                id="default-work-duration"
+                min="1"
+                max="60"
+                value="25"
+              />
+              <small>Recommended: 25 minutes for optimal focus</small>
+            </div>
+
+            <div class="setting-group">
+              <label for="default-break-duration"
+                >Default Break Duration (minutes):</label
+              >
+              <input
+                type="number"
+                id="default-break-duration"
+                min="1"
+                max="30"
+                value="5"
+              />
+              <small>Recommended: 5 minutes for short breaks</small>
+            </div>
+
+            <div class="setting-group">
+              <label class="checkbox-label">
+                <input type="checkbox" id="notifications-enabled" checked />
+                <span class="checkmark"></span>
+                Enable Notifications
+              </label>
+              <small>Get notified when work/break sessions end</small>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+          </form>
+        </div>
+
+        <div class="settings-card">
+          <h3>Account Information</h3>
+          <div class="account-info">
+            <div class="info-item">
+              <span class="label">Username:</span>
+              <span class="value" id="username-display">Loading...</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Email:</span>
+              <span class="value" id="email-display">Loading...</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Member Since:</span>
+              <span class="value" id="created-at-display">Loading...</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-card">
+          <h3>Privacy & Security</h3>
+          <div class="security-settings">
+            <p class="security-note">
+              Your study data is private and only visible to you and your
+              friends. You can control who can see your progress by managing
+              your friends list.
+            </p>
+            <div class="security-actions">
+              <button class="btn btn-outline" onclick="manageFriends()">
+                Manage Friends
+              </button>
+              <button class="btn btn-outline" onclick="viewPrivacyPolicy()">
+                Privacy Policy
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="message" class="message" style="display: none"></div>
+    </div>
+
+    <script>
+      const timerSettingsForm = document.getElementById("timer-settings-form");
+      const workDurationInput = document.getElementById(
+        "default-work-duration"
+      );
+      const breakDurationInput = document.getElementById(
+        "default-break-duration"
+      );
+      const notificationsInput = document.getElementById(
+        "notifications-enabled"
+      );
+      const usernameDisplay = document.getElementById("username-display");
+      const emailDisplay = document.getElementById("email-display");
+      const createdAtDisplay = document.getElementById("created-at-display");
+      const messageDiv = document.getElementById("message");
+
+      async function loadSettings() {
+        try {
+          const response = await fetch(
+            "http://127.0.0.1:5000/api/user/settings",
+            {
+              credentials: "include",
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            const settings = data.settings;
+            workDurationInput.value = settings.default_work_duration || 25;
+            breakDurationInput.value = settings.default_break_duration || 5;
+            notificationsInput.checked =
+              settings.notifications_enabled !== false;
+          } else {
+            showMessage("Failed to load settings", "error");
+          }
+        } catch (error) {
+          showMessage("Network error loading settings", "error");
+        }
+      }
+
+      async function loadUserInfo() {
+        try {
+          const response = await fetch("http://127.0.0.1:5000/auth/me", {
+            credentials: "include",
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+            const user = data.user;
+            usernameDisplay.textContent = user.username || "Unknown";
+            emailDisplay.textContent = user.email || "Unknown";
+
+            if (user.created_at) {
+              const createdDate = new Date(user.created_at);
+              createdAtDisplay.textContent = createdDate.toLocaleDateString();
+            } else {
+              createdAtDisplay.textContent = "Unknown";
+            }
+          } else {
+            showMessage("Failed to load user information", "error");
+          }
+        } catch (error) {
+          showMessage("Network error loading user information", "error");
+        }
+      }
+
+      async function saveSettings(event) {
+        event.preventDefault();
+
+        const settings = {
+          default_work_duration: parseInt(workDurationInput.value),
+          default_break_duration: parseInt(breakDurationInput.value),
+          notifications_enabled: notificationsInput.checked,
+        };
+
+        try {
+          const response = await fetch(
+            "http://127.0.0.1:5000/api/user/settings",
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(settings),
+            }
+          );
+
+          const data = await response.json();
+
+          if (response.ok) {
+            showMessage("Settings saved successfully!", "success");
+          } else {
+            showMessage(data.error || "Failed to save settings", "error");
+          }
+        } catch (error) {
+          showMessage("Network error saving settings", "error");
+        }
+      }
+
+      function showMessage(text, type) {
+        messageDiv.textContent = text;
+        messageDiv.className = `message ${type}`;
+        messageDiv.style.display = "block";
+        setTimeout(() => {
+          messageDiv.style.display = "none";
+        }, 3000);
+      }
+
+      function manageFriends() {
+        window.location.href = "social.html";
+      }
+
+      function viewPrivacyPolicy() {
+        alert(
+          "Privacy Policy:\n\n• Your study data is stored securely and privately\n• Only you and your friends can see your progress\n• You can remove friends at any time\n• Your personal information is never shared with third parties\n• You can delete your account and all data at any time"
+        );
+      }
+
+      async function logout() {
+        try {
+          await fetch("http://127.0.0.1:5000/auth/logout", {
+            method: "POST",
+            credentials: "include",
+          });
+          window.location.href = "index.html";
+        } catch (error) {
+          window.location.href = "index.html";
+        }
+      }
+
+      timerSettingsForm.addEventListener("submit", saveSettings);
+
+      async function init() {
+        try {
+          const response = await fetch("http://127.0.0.1:5000/auth/me", {
+            credentials: "include",
+          });
+
+          if (!response.ok) {
+            window.location.href = "index.html";
+            return;
+          }
+
+          await Promise.all([loadSettings(), loadUserInfo()]);
+        } catch (error) {
+          window.location.href = "index.html";
+        }
+      }
+
+      init();
+    </script>
+  </body>
+</html>
